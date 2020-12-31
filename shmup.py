@@ -1,4 +1,4 @@
-# Shmup game
+ # Shmup game
 import pygame
 import random
 from os import path
@@ -6,10 +6,12 @@ from os import path
 img_dir = path.join(path.dirname(__file__), 'img')
 snd_dir = path.join(path.dirname(__file__), 'snd')
 
+
 WIDTH = 480
 HEIGHT = 600
 FPS = 60
 POWERUP_TIME = 5000
+INV_TIME = 5000
 
 
 # define colors
@@ -19,8 +21,11 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
-
+PRPLE = (255, 0, 255)
 # initialize pygame and create window
+# pygame.joystick.init()
+# pygame.joystick.get_count()
+# pygame.joystick.Joystick
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -28,6 +33,7 @@ pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
 max_shield = 100.0
 
+# fonts. arial, Sierf, Serif, Serif Bold, Sans serif, Monspace, Russo One, Exo 2,
 font_name = pygame.font.match_font('arial')
 def draw_text(surf, text, size, x, y):
     font = pygame.font.Font(font_name, size)
@@ -41,6 +47,12 @@ def newmob():
     m = Mob()
     all_sprites.add(m)
     mobs.add(m)
+
+
+def newmetle():
+    m = Metle()
+    all_sprites.add(m)
+    metles.add(m)
 
 
 def draw_shield_bar(surf, x, y, shield):
@@ -66,8 +78,8 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.transform.scale(player_img, (50, 48))
-        self.image.set_colorkey(BLACK)
+        self.image = pygame.transform.scale(player_img, (52, 60))
+        # self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.radius = 20
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
@@ -75,7 +87,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.bottom = HEIGHT - 10
         self.speedx = 0
         self.shield = max_shield
-        self.shoot_delay = 250
+        self.shoot_delay = 190
         self.last_shot = pygame.time.get_ticks()
         self.lives = 3
         self.hidden = False
@@ -117,10 +129,6 @@ class Player(pygame.sprite.Sprite):
         self.power_time = pygame.time.get_ticks()
 
 
-
-
-
-
     def shoot(self):
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.shoot_delay:
@@ -160,8 +168,7 @@ class Player(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.radius = random.randrange(20,50)
-
+        self.radius = random.randrange(20,40)
         self.image_orig = pygame.transform.scale(random.choice(meteor_images),(self.radius*2, self.radius*2))
         self.image_orig.set_colorkey(BLACK)
         self.image = self.image_orig.copy()
@@ -175,6 +182,7 @@ class Mob(pygame.sprite.Sprite):
         self.rot_speed = random.randrange(-8, 8)
         self.last_update = pygame.time.get_ticks()
 
+
     def rotate(self):
         now = pygame.time.get_ticks()
         if now - self.last_update > 50:
@@ -186,6 +194,7 @@ class Mob(pygame.sprite.Sprite):
             self.image = new_image
             self.rect = self.image.get_rect()
             self.rect.center = old_center
+
     def update(self):
         self.rotate()
         self.rect.x += self.speedx
@@ -193,14 +202,14 @@ class Mob(pygame.sprite.Sprite):
         if self.rect.top > HEIGHT + 10 or self.rect.left < -25 or self.rect.right > WIDTH + 20 :
             self.rect.x = random.randrange(WIDTH - self.rect.width)
             self.rect.y = random.randrange(-150, -50)
-            self.speedy = random.randrange(5, 15)
+            self.speedy = random.randrange(5, 25)
+
 
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.transform.scale(bullet_img, (20, 50))
-        self.image.set_colorkey(BLACK)
          # self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
         self.rect.bottom = y
@@ -220,7 +229,6 @@ class Pow(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.type = random.choice(['shield', 'gun'])
         self.image = pygame.transform.scale(powerup_images[self.type], (90, 90))
-        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.center = center
         self.speedy = 2
@@ -258,11 +266,57 @@ class Explosion(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.center = center
 
+
+
+
+
+
+class Metle(pygame.sprite.Sprite):
+        def __init__(self):
+            pygame.sprite.Sprite.__init__(self)
+            self.radius = random.randrange(20,40)
+            self.image_orig = pygame.transform.scale(random.choice(metle_img),(self.radius*2, self.radius*2))
+
+            self.image = self.image_orig.copy()
+            self.rect = self.image.get_rect()
+            # pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
+            self.rect.x = random.randrange(WIDTH - self.rect.width)
+            self.rect.y = random.randrange(-100, -40)
+            self.speedy = random.randrange(1, 2)
+            self.speedx = random.randrange(-2,2)
+            self.rot = 0
+            self.rot_speed = random.randrange(-8, 8)
+            self.last_update = pygame.time.get_ticks()
+
+
+        def rotate(self):
+            now = pygame.time.get_ticks()
+            if now - self.last_update > 50:
+                self.last_update = now
+                self.rot = (self.rot + self.rot_speed) % 360
+                self.image = pygame.transform.rotate(self.image_orig, self.rot)
+                new_image = pygame.transform.rotate(self.image_orig, self.rot)
+                old_center = self.rect.center
+                self.image = new_image
+                self.rect = self.image.get_rect()
+                self.rect.center = old_center
+
+        def update(self):
+            self.rotate()
+            self.rect.x += self.speedx
+            self.rect.y += self.speedy
+            if self.rect.top > HEIGHT + 10 or self.rect.left < -25 or self.rect.right > WIDTH + 20 :
+                self.rect.x = random.randrange(WIDTH - self.rect.width)
+                self.rect.y = random.randrange(-150, -50)
+                self.speedy = random.randrange(5, 25)
+
+
 def show_go_screen():
 #    screen.blit(backgrownd, backgrownd_rect)
-    draw_text(screen, "SHMUP!", 100, WIDTH / 2, HEIGHT / 4)
+    draw_text(screen, "SHMUP!", 90, WIDTH / 2, HEIGHT / 4)
     draw_text(screen, "Arrow keys move, Space to fire", 22, WIDTH / 2, HEIGHT / 2)
-    draw_text(screen, "Press a key to begin and not p. p to pause. r to restart", 18, WIDTH / 2, HEIGHT * 3 / 4)
+    draw_text(screen, "Press a key to begin. p to pause. r to restart.", 19, WIDTH / 2, HEIGHT * 3 / 4)
+    draw_text(screen, "L to shoot faster.", 19, WIDTH / 2, HEIGHT * 4 / 5)
     pygame.display.flip()
     waiting = True
     while waiting:
@@ -274,13 +328,14 @@ def show_go_screen():
                 waiting = False
 
 backgrownd = pygame.image.load(path.join(img_dir, "Backgrownd15.png")).convert()
-backgrownd_rect =  backgrownd.get_rect()
-player_img = pygame.image.load(path.join(img_dir, "ship4.png")).convert()
+backgrownd_rect = backgrownd.get_rect()
+player_img = pygame.image.load(path.join(img_dir,"8B.png"))
 player_mini_img = pygame.transform.scale(player_img, (15, 17))
-player_mini_img.set_colorkey(BLACK)
-bullet_img = pygame.image.load(path.join(img_dir, "Bullet5.png")).convert()
+# player_mini_img.set_colorkey(BLACK)
+bullet_img = pygame.image.load(path.join(img_dir, "Bullet5.png"))
 meteor_images = []
-meteor_list = ["asteroid.png", "asteroid2.png","asteroid3.png", "asteroid4.png", "asteroid5.png", "asteroid6.png" ]
+meteor_list = ["astroid1.png", "astroid2.png"]
+metle_img = [pygame.image.load(path.join(img_dir,"metle.png"))]
 
 
 for img in meteor_list:
@@ -300,9 +355,8 @@ for  i in range(4):
     explosion_anim['sm'].append(img_sm)
 
 powerup_images = {}
-powerup_images['shield'] = pygame.image.load(path.join(img_dir, 'pow0.png')).convert()
-powerup_images['gun'] = pygame.image.load(path.join(img_dir, 'pow1.png')).convert()
-
+powerup_images['shield'] = pygame.image.load(path.join(img_dir, 'pow0.png'))
+powerup_images['gun'] = pygame.image.load(path.join(img_dir, 'pow1.png'))
 
 shoot_sound = pygame.mixer.Sound(path.join(snd_dir, 'pew2.wav'))
 
@@ -329,20 +383,24 @@ while running:
         show_go_screen()
         all_sprites = pygame.sprite.Group()
         mobs = pygame.sprite.Group()
+        metles = pygame.sprite.Group()
         bullets = pygame.sprite.Group()
         powerup = pygame.sprite.Group()
         player = Player()
         all_sprites.add(player)
         for i in range(8):
             newmob()
+        for i in range(2):
+            newmetle()
         score = 0
-    if score >= 3500:
-        y = random.randrange(-250, -150)
-        speedy = random.randrange(10, 30)
 
-    if score >= 5500:
+    if score == 3500:
+        y = random.randrange(-250, -150)
+        speedy = random.randrange(20, 40)
+
+    if score == 5500:
         y = random.randrange(-350, -250)
-        speedy = random.randrange(40, 50)
+        speedy = random.randrange(60, 80)
 
 
     if game_over:
@@ -350,12 +408,15 @@ while running:
         game_over = False
         all_sprites = pygame.sprite.Group()
         mobs = pygame.sprite.Group()
+        metles = pygame.sprite.Group()
         bullets = pygame.sprite.Group()
         powerup = pygame.sprite.Group()
         player = Player()
         all_sprites.add(player)
         for i in range(8):
             newmob()
+        for i in range(2):
+            newmetle()
         score = 0
 
     # keep loop running at the right speed
@@ -370,21 +431,23 @@ while running:
     all_sprites.update()
     # check if the bullets hits a mob
     hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
+    hits = pygame.sprite.groupcollide(metles, bullets, True, True)
     for hit in hits:
         score += 50 - hit.radius
         random.choice(expl_sounds).play()
         expl = Explosion(hit.rect.center, 'lg')
         all_sprites.add(expl)
-        if random.random() > 0.9:
+        if random.random() > .9:
             pow = Pow(hit.rect.center)
             all_sprites.add(pow)
             powerup.add(pow)
         newmob()
+        newmetle()
 
 
     # check if the mod hit the player
     hits = pygame.sprite.spritecollide(player, mobs, True, pygame.sprite.collide_circle)
-
+    hits = pygame.sprite.spritecollide(player, metles, False, pygame.sprite.collide_circle)
 
     for hit in hits:
         player.shield -= hit.radius * 2
@@ -392,6 +455,7 @@ while running:
         all_sprites.add(expl)
 
         newmob()
+        newmetle()
         if player.shield <= 0:
             player.hide()
             player.lives -= 1
